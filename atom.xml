@@ -6,7 +6,7 @@
   <link href="http://example.com/atom.xml" rel="self"/>
   
   <link href="http://example.com/"/>
-  <updated>2023-12-09T09:48:13.191Z</updated>
+  <updated>2023-12-09T17:52:18.602Z</updated>
   <id>http://example.com/</id>
   
   <author>
@@ -15,6 +15,28 @@
   </author>
   
   <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>万用表but wireless?-1 项目立项</title>
+    <link href="http://example.com/2023/12/10/%E4%B8%87%E7%94%A8%E8%A1%A8%E6%94%B9%E8%A3%85/%E4%B8%87%E7%94%A8%E8%A1%A8%E6%94%B9%E8%A3%85-1/"/>
+    <id>http://example.com/2023/12/10/%E4%B8%87%E7%94%A8%E8%A1%A8%E6%94%B9%E8%A3%85/%E4%B8%87%E7%94%A8%E8%A1%A8%E6%94%B9%E8%A3%85-1/</id>
+    <published>2023-12-09T17:11:41.000Z</published>
+    <updated>2023-12-09T17:52:18.602Z</updated>
+    
+    <content type="html"><![CDATA[<h1 id="立项"><a href="#立项" class="headerlink" title="立项"></a>立项</h1><p>今天晚上突发奇想，要是万用表的显示要是能大一点就好了，最好可以显示在屏幕上面，那该是一件多酷的事情哇，所以我就准备拓展一下想法，让万用表的表盘可以接入到屏幕上面，说干就干！</p><h1 id="项目方案"><a href="#项目方案" class="headerlink" title="项目方案"></a>项目方案</h1><h2 id="万用表结构"><a href="#万用表结构" class="headerlink" title="万用表结构"></a>万用表结构</h2><p><img src="/../../images/meter-1.png" alt="Alt text"><br>这是我的万用表的结构图(胜利V890D)，我已经用了七八年了，第一步改造是希望可以将显示放放在电脑屏幕上面，对我来说最简单的办法就是将显示屏的数据作为IO输入到ESP8266，写一个网页，然后访问局域网，再进行实时更新就可以，不过美中不足的是万用表使用旋转表盘和弹片控制挡位，不是很好输入，所以输入的话就暂时先不考虑了。</p><h2 id="万用表的输入输出"><a href="#万用表的输入输出" class="headerlink" title="万用表的输入输出"></a>万用表的输入输出</h2><p>输入主要有以下几个：</p><ol><li>电源输入（堆叠电池9V）</li><li>表笔</li><li>挡位表盘（旋转选择挡位）<br>输出主要有：</li><li>液晶屏显示</li><li>LED和陶瓷蜂鸣器（作为指示灯和提示音）</li></ol><h2 id="改装思路"><a href="#改装思路" class="headerlink" title="改装思路"></a>改装思路</h2><p><img src="/../../images/meter-2.png" alt="Alt text"></p><ol><li>屏幕编码<br>万用表的屏幕采用的是像计算器的那种，比较不好接线，而且按照我猜测应该是像数码管那种共阴共阳的，所以IO会比较多，我数下有30根线，很显然要进行编码，所以要加一个编码电路。</li><li>ESP8266编程<br>软件的部分就相对比较简单了，主要考虑的一个事情就是数据上传的演示，毕竟没有直接连线的显示快，之后再看咯，先把想法记录一下。</li></ol>]]></content>
+    
+    
+      
+      
+    <summary type="html">&lt;h1 id=&quot;立项&quot;&gt;&lt;a href=&quot;#立项&quot; class=&quot;headerlink&quot; title=&quot;立项&quot;&gt;&lt;/a&gt;立项&lt;/h1&gt;&lt;p&gt;今天晚上突发奇想，要是万用表的显示要是能大一点就好了，最好可以显示在屏幕上面，那该是一件多酷的事情哇，所以我就准备拓展一下想法，让万用表的表</summary>
+      
+    
+    
+    
+    <category term="小项目" scheme="http://example.com/categories/%E5%B0%8F%E9%A1%B9%E7%9B%AE/"/>
+    
+    
+  </entry>
   
   <entry>
     <title>开启telnet并接入</title>
