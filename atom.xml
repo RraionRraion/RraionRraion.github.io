@@ -56,9 +56,9 @@
     <link href="http://example.com/2023/12/03/Hi3516DV300%E5%BC%80%E5%8F%91/%E6%B5%B7%E5%BA%B7%E5%A8%81%E8%A7%86Hi3516DV300%E5%BC%80%E5%8F%91-1/"/>
     <id>http://example.com/2023/12/03/Hi3516DV300%E5%BC%80%E5%8F%91/%E6%B5%B7%E5%BA%B7%E5%A8%81%E8%A7%86Hi3516DV300%E5%BC%80%E5%8F%91-1/</id>
     <published>2023-12-03T14:22:53.000Z</published>
-    <updated>2023-12-03T18:03:25.699Z</updated>
+    <updated>2023-12-09T09:30:05.217Z</updated>
     
-    <content type="html"><![CDATA[<h1 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h1><p>在闲鱼买了一个百度度目的板子，用的是海康威视海康威视Hi3516DV300，虽然是很多年前的芯片，但是拿来玩玩也不为过，呜呜板子花了我一百大洋，由于网线不是使用RJ45引出的，我暂时只能使用串口连接，串口不停打印很烦，所以直接把用户目录下面的文件全删了，从头开始做SDK开发</p><h1 id="配置"><a href="#配置" class="headerlink" title="配置"></a>配置</h1><p>这内存是有点低，怪不得用busybox，存储中规中矩，毕竟视频和AI处理芯片，后面的才是大头<br><img src="/../../images/hi-1.png" alt="Alt text"></p><h1 id="使用接口"><a href="#使用接口" class="headerlink" title="使用接口"></a>使用接口</h1><p>哎，垃圾佬的悲哀正如此，晚上研究网口研究半天始终ping不通，之后去B站学一下海思开发吧，大家等我好消息，明天还要上班…</p>]]></content>
+    <content type="html"><![CDATA[<h1 id="说明"><a href="#说明" class="headerlink" title="说明"></a>说明</h1><p>在闲鱼买了一个百度度目的板子，用的是海康威视海康威视Hi3516DV300，虽然是很多年前的芯片，但是拿来玩玩也不为过，呜呜板子花了我一百大洋，由于网线不是使用RJ45引出的，我暂时只能使用串口连接，串口不停打印很烦，所以直接把用户目录下面的文件全删了，从头开始做SDK开发</p><h1 id="配置"><a href="#配置" class="headerlink" title="配置"></a>配置</h1><p>这内存是有点低，怪不得用busybox，存储中规中矩，毕竟视频和AI处理芯片，后面的才是大头<br><img src="/../../images/hi-1.png" alt="Alt text"></p><h1 id="使用接口"><a href="#使用接口" class="headerlink" title="使用接口"></a>使用接口</h1><p>哎，垃圾佬的悲哀正如此，晚上研究网口研究半天始终ping不通，之后去B站学一下海思开发吧，大家等我好消息，明天还要上班…</p><h1 id="新进展"><a href="#新进展" class="headerlink" title="新进展"></a>新进展</h1><p>之前不是说ping不通网口嘛，我就暂时放弃了研究度目的板子，后来我又淘垃圾一百块买了两个人脸门禁，上面是有网口接口的，所以直接连到路由器上是可以接入的，然后发现了这些很多的设备（Hi3516XVX00）都是默认开启了telnet的，所以可以通过telnet连接板子，我就以自己淘的垃圾来和大家说一下。</p><h2 id="设备"><a href="#设备" class="headerlink" title="设备"></a>设备</h2><p>首先来给大家看一下设备的外观<br><img src="/../../images/hi-img-0.jpg" alt="Alt text"><br><img src="/../../images/hi-img-1.jpg" alt="Alt text"><br><img src="/../../images/hi-img-2.jpg" alt="Alt text"><br><img src="/../../images/hi-img-3.jpg" alt="Alt text"><br>因为这个门禁机有一个屏幕还是armv7的芯片，所以我觉得50块已经物超所值了，不过不带触摸，所以不太能进行交互</p><h2 id="接线"><a href="#接线" class="headerlink" title="接线"></a>接线</h2><p><img src="/../../images/hi-img-4.png" alt="Alt text"><br>可以看到接口是有串口和电源的，接好12V电源，插好网线，就可以在路由器后台看到设备的IP了，如果你进不去路由器的后台也可以使用串口如下：</p><ol><li><p>将设备使用串口下载器连接到电脑</p><p> 如果运气好的话串口就可以当一个shell来使用，我先使用的使用的是16pin接口的串口，结果发现没用，所以直接把设备拆了，然后在电路板上找到了debug串口，焊线连接，就进去了。不过由于打印的缘故看，可能输出很多日志，不过没有关系，</p></li><li><p>在shell中查看设备ip</p><p> 我们直接使用<code>ifconfig</code>命令就可以看到设备的ipv4地址，在主机上ping下，运气好可以ping通。我的设备的IP地址是<code>192.168.100.42</code></p></li><li><p>查看设备开启的端口并且telnet</p><p> 发现设备可以ping通之后就开始查看打开的端口，我用的是<code>nmap</code>，然后发现23端口是打开的（telnet），狂喜，但是我在怎么登录这个问题上思考了很多，但是后来灵光一现：</p><ul><li>在串口使用<code>whoami</code>查看当前用户，发现是root</li><li>直接使用<code>passwd root</code>来进行设置root密码</li></ul><p> 完事之后直接就可以使用telnet进行远程登录啦,输入账号root和密码就ok，我进入telnet之后发现设备用的是busybox，可玩性不高，所以之后准备给它刷一个alpine或者armbian</p></li><li><p>关于查看设备的IP，因为如果没有办法接入到串口的话其实还挺麻烦，我最开始就是这样，并且我也没办法进入路由器的后台，这个时候唯一能得到的就是ip，有了ip就有了网络攻击的可能，比如使用kali进行telnet爆破等等，不过我字典爆破没有成功就老老实实找串口了。之后如果把海思刷了armbian再更新，最近几天可能要看一下海思开发咯。</p></li></ol>]]></content>
     
     
       
@@ -125,11 +125,19 @@
   
   <entry>
     <title>折腾老母鸡-1-给老母鸡安装mysql</title>
-    <link href="http://example.com/2023/12/03/%E6%8A%98%E8%85%BE%E8%80%81%E6%AF%8D%E9%B8%A1-1/"/>
-    <id>http://example.com/2023/12/03/%E6%8A%98%E8%85%BE%E8%80%81%E6%AF%8D%E9%B8%A1-1/</id>
+    <link href="http://example.com/2023/12/03/%E7%8E%A9%E5%AE%A2%E4%BA%91-1/"/>
+    <id>http://example.com/2023/12/03/%E7%8E%A9%E5%AE%A2%E4%BA%91-1/</id>
     <published>2023-12-03T09:43:21.000Z</published>
-    <updated>2023-12-03T11:03:12.939Z</updated>
+    <updated>2023-12-06T15:46:31.640Z</updated>
     
+    <content type="html"><![CDATA[<ol><li>下载固件刷机 <a href="https://github.com/hzyitc/armbian-onecloud/releases/download/ci-20230202-145642-UTC/Armbian_23.02.0-trunk_Onecloud_bullseye_edge_6.1.9_minimal.burn.img.xz">点击此处下载</a></li><li>远程登录，root，1234</li></ol><h1 id="内网穿透"><a href="#内网穿透" class="headerlink" title="内网穿透"></a>内网穿透</h1>]]></content>
+    
+    
+      
+      
+    <summary type="html">&lt;ol&gt;
+&lt;li&gt;下载固件刷机 &lt;a href=&quot;https://github.com/hzyitc/armbian-onecloud/releases/download/ci-20230202-145642-UTC/Armbian_23.02.0-trunk_Onecloud_</summary>
+      
     
     
     
