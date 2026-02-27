@@ -29,11 +29,6 @@ jobs:
           path: ./shiptm
           out-dir: dist
 
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: ./shiptm/dist
-
   deploy:
     runs-on: ubuntu-latest
     needs: build
