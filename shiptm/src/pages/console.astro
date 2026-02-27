@@ -31,6 +31,7 @@ import { defaultMeetings } from '../data/meetings';
 						<div class="app-actions">
 							<button id="new-meeting" type="button">New Meeting</button>
 							<button id="logout" type="button">Logout</button>
+							<button id="print-agenda" type="button">Print</button>
 						</div>
 					</div>
 
@@ -43,24 +44,64 @@ import { defaultMeetings } from '../data/meetings';
 						<section>
 							<h2>Editor</h2>
 							<form id="meeting-form" class="editor-form">
-								<input name="id" placeholder="#442" required />
-								<input name="type" placeholder="Regular" required />
-								<input name="title" placeholder="Title" required />
-								<input name="manager" placeholder="Manager" required />
-								<input name="date" placeholder="YYYY-MM-DD" required />
-								<input name="time" placeholder="19:15:00 - 21:30:00" required />
-								<input name="location" placeholder="Location" required />
-								<input name="image" placeholder="Image URL or Base64" />
-								<textarea name="description" placeholder="Description" rows="4" required></textarea>
-								<label class="file-label">
-									Upload Image
+								<label class="editor-field">
+									<span class="editor-label">Meeting ID</span>
+									<input name="id" placeholder="#442" required />
+								</label>
+								<label class="editor-field">
+									<span class="editor-label">Type</span>
+									<select name="type" required>
+										<option value="Regular">Regular</option>
+										<option value="Regular English">Regular English</option>
+										<option value="Regular Chinese">Regular Chinese</option>
+										<option value="Joint">Joint</option>
+									</select>
+								</label>
+								<label class="editor-field">
+									<span class="editor-label">Title</span>
+									<input name="title" placeholder="Title" required />
+								</label>
+								<label class="editor-field">
+									<span class="editor-label">Word of Today</span>
+									<input name="wordOfToday" placeholder="Today's word" />
+								</label>
+								<label class="editor-field">
+									<span class="editor-label">Manager</span>
+									<input name="manager" placeholder="Manager" required />
+								</label>
+								<label class="editor-field">
+									<span class="editor-label">Date</span>
+									<input name="date" type="date" required />
+								</label>
+								<label class="editor-field">
+									<span class="editor-label">Time</span>
+									<select id="meeting-time-select" name="time" required>
+										<option value="19:30:00 - 21:30:00">19:30:00 - 21:30:00</option>
+										<option value="19:15:00 - 21:30:00">19:15:00 - 21:30:00</option>
+										<option value="19:00:00 - 21:00:00">19:00:00 - 21:00:00</option>
+										<option value="20:00:00 - 22:00:00">20:00:00 - 22:00:00</option>
+									</select>
+								</label>
+								<label class="editor-field">
+									<span class="editor-label">Location</span>
+									<input name="location" placeholder="Location" value="深圳湾科技生态园10B号楼" required />
+								</label>
+								<label class="editor-field">
+									<span class="editor-label">Image</span>
+									<input name="image" placeholder="Image URL or Base64" />
+								</label>
+								<label class="editor-field">
+									<span class="editor-label">Description</span>
+									<textarea name="description" placeholder="Description" rows="4" required></textarea>
+								</label>
+								<label class="editor-field file-label">
+									<span class="editor-label">Upload</span>
 									<input id="image-file" type="file" accept="image/*" />
 								</label>
 
 								<div class="sub-block">
 									<div class="sub-head">
 										<h3>Awards</h3>
-										<button id="add-award" type="button">+ Award</button>
 									</div>
 									<div id="award-list"></div>
 								</div>
@@ -107,6 +148,9 @@ import { defaultMeetings } from '../data/meetings';
 			const AUTH_KEY = 'ship_console_auth';
 			const ACCOUNT = 'ship';
 			const PASSWORD = 'ship';
+			const DEFAULT_TYPE = 'Regular';
+			const DEFAULT_TIME_RANGE = '19:30:00 - 21:30:00';
+			const DEFAULT_LOCATION = '深圳湾科技生态园10B号楼';
 			const STANDARD_TEMPLATE = [
 				{ duration: '1', title: 'Welcome and meeting rules', speaker: 'Horatio' },
 				{ duration: '2', title: 'Opening', speaker: 'Gianna' },
@@ -132,6 +176,14 @@ import { defaultMeetings } from '../data/meetings';
 				{ duration: '8', title: 'Moment of truth', speaker: 'Horatio' },
 				{ duration: '2', title: 'Award ceremony', speaker: 'Angela' },
 				{ duration: '1', title: 'Closing', speaker: 'Gianna' },
+			];
+			const FIXED_AWARD_TITLES = [
+				'Best Master',
+				'Best Meeting Manager',
+				'Best Table Topic Speaker',
+				'Best Evaluator',
+				'Best Speaker',
+				'Best Facilitator',
 			];
 
 			const qs = (s) => document.querySelector(s);
@@ -171,14 +223,27 @@ import { defaultMeetings } from '../data/meetings';
 
 			function makeAwardRow(data = { title: '', winner: '' }) {
 				const row = document.createElement('div');
-				row.className = 'row';
+				row.className = 'row award-row';
+				row.dataset.awardTitle = String(data.title || '');
 				row.innerHTML = `
-					<input name="awardTitle" placeholder="Award title" value="${data.title || ''}" />
+					<input name="awardTitle" value="${data.title || ''}" readonly />
 					<input name="awardWinner" placeholder="Winner" value="${data.winner || ''}" />
-					<button type="button" class="remove">x</button>
 				`;
-				row.querySelector('.remove').addEventListener('click', () => row.remove());
 				return row;
+			}
+
+			function renderAwardRows(awards = []) {
+				const titleToWinner = new Map();
+				awards.forEach((a) => {
+					const key = String(a?.title || '').trim().toLowerCase();
+					if (key && !titleToWinner.has(key)) titleToWinner.set(key, String(a?.winner || '').trim());
+				});
+				byId('award-list').innerHTML = '';
+				FIXED_AWARD_TITLES.forEach((title, idx) => {
+					const winnerByTitle = titleToWinner.get(title.toLowerCase());
+					const winnerByIndex = awards[idx] ? String(awards[idx].winner || '').trim() : '';
+					byId('award-list').appendChild(makeAwardRow({ title, winner: winnerByTitle ?? winnerByIndex }));
+				});
 			}
 
 			function parseMinutes(text) {
@@ -198,6 +263,25 @@ import { defaultMeetings } from '../data/meetings';
 				const h = String(Math.floor(fixed / 60)).padStart(2, '0');
 				const m = String(fixed % 60).padStart(2, '0');
 				return `${h}:${m}`;
+			}
+
+			function toIsoDate(date) {
+				const y = date.getFullYear();
+				const m = String(date.getMonth() + 1).padStart(2, '0');
+				const d = String(date.getDate()).padStart(2, '0');
+				return `${y}-${m}-${d}`;
+			}
+
+			function ensureSelectHasValue(selectEl, value) {
+				const text = String(value || '').trim();
+				if (!selectEl || !text) return;
+				const has = [...selectEl.options].some((opt) => opt.value === text);
+				if (!has) {
+					const option = document.createElement('option');
+					option.value = text;
+					option.textContent = text;
+					selectEl.appendChild(option);
+				}
 			}
 
 			function parseActualRange(value) {
@@ -332,12 +416,17 @@ import { defaultMeetings } from '../data/meetings';
 				const item = meetings[idx];
 				if (!item) return;
 				editingIndex = idx;
-				['id', 'type', 'title', 'manager', 'date', 'time', 'location', 'description', 'image'].forEach((k) => {
+				['id', 'title', 'wordOfToday', 'manager', 'location', 'description', 'image'].forEach((k) => {
 					form.elements[k].value = item[k] || '';
 				});
+				form.elements.date.value = item.date || toIsoDate(new Date());
+				ensureSelectHasValue(form.elements.type, item.type);
+				form.elements.type.value = item.type || DEFAULT_TYPE;
+				ensureSelectHasValue(form.elements.time, item.time);
+				form.elements.time.value = item.time || DEFAULT_TIME_RANGE;
 				byId('agenda-start-time').value = item.agendaStartTime || '19:00';
 				clearRows();
-				(item.awards || []).forEach((a) => byId('award-list').appendChild(makeAwardRow(a)));
+				renderAwardRows(item.awards || []);
 				(item.agenda || []).forEach((a) => byId('agenda-list').appendChild(makeAgendaRow(a)));
 				recomputeAgendaPlanTimes();
 				renderMeetingList();
@@ -347,9 +436,13 @@ import { defaultMeetings } from '../data/meetings';
 				editingIndex = null;
 				const form = byId('meeting-form');
 				form.reset();
+				form.elements.date.value = toIsoDate(new Date());
+				form.elements.type.value = DEFAULT_TYPE;
+				form.elements.time.value = DEFAULT_TIME_RANGE;
+				form.elements.location.value = DEFAULT_LOCATION;
 				byId('agenda-start-time').value = '19:00';
 				clearRows();
-				byId('award-list').appendChild(makeAwardRow());
+				renderAwardRows();
 				byId('agenda-list').appendChild(makeAgendaRow());
 				recomputeAgendaPlanTimes();
 				renderMeetingList();
@@ -358,7 +451,7 @@ import { defaultMeetings } from '../data/meetings';
 			function collectForm() {
 				const form = byId('meeting-form');
 				const awards = [...byId('award-list').querySelectorAll('.row')].map((row) => ({
-					title: row.querySelector('[name="awardTitle"]').value.trim(),
+					title: (row.dataset.awardTitle || row.querySelector('[name="awardTitle"]').value || '').trim(),
 					winner: row.querySelector('[name="awardWinner"]').value.trim(),
 				}));
 				const agenda = [...byId('agenda-list').querySelectorAll('.row')].map((row) => ({
@@ -373,6 +466,7 @@ import { defaultMeetings } from '../data/meetings';
 					id: form.elements.id.value.trim(),
 					type: form.elements.type.value.trim(),
 					title: form.elements.title.value.trim(),
+					wordOfToday: form.elements.wordOfToday.value.trim(),
 					manager: form.elements.manager.value.trim(),
 					date: form.elements.date.value.trim(),
 					time: form.elements.time.value.trim(),
@@ -380,9 +474,205 @@ import { defaultMeetings } from '../data/meetings';
 					description: form.elements.description.value.trim(),
 					image: form.elements.image.value.trim(),
 					agendaStartTime: byId('agenda-start-time').value || '19:00',
-					awards: awards.filter((a) => a.title || a.winner),
+					awards,
 					agenda: agenda.filter((a) => a.title),
 				};
+			}
+
+			function escapeHtml(value) {
+				return String(value ?? '')
+					.replaceAll('&', '&amp;')
+					.replaceAll('<', '&lt;')
+					.replaceAll('>', '&gt;')
+					.replaceAll('"', '&quot;')
+					.replaceAll("'", '&#39;');
+			}
+
+			function printAgenda() {
+				recomputeAgendaPlanTimes();
+				const data = collectForm();
+
+				const agendaRows = (data.agenda || [])
+					.map(
+						(item, idx) => `
+							<tr>
+								<td>${escapeHtml(item.planTime)}</td>
+								<td>${escapeHtml(item.title)}</td>
+								<td>${escapeHtml(item.duration)}</td>
+								<td>${escapeHtml(item.speaker)}</td>
+							</tr>
+						`
+					)
+					.join('');
+
+				const html = `
+					<!doctype html>
+					<html lang="en">
+						<head>
+							<meta charset="utf-8" />
+							<title>Agenda Print</title>
+							<style>
+								@page { size: A4 portrait; margin: 10mm; }
+								* { box-sizing: border-box; }
+								body { font-family: Arial, sans-serif; margin: 0; color: #111; }
+								.sheet { width: 190mm; margin: 0 auto; }
+								.header { border: 1px solid #333; border-bottom: 0; padding: 3mm 4mm 2.5mm; text-align: center; display: grid; grid-template-columns: 24mm 1fr 24mm; align-items: center; column-gap: 2mm; }
+								.header-main { min-width: 0; }
+								.logo-placeholder { width: 20mm; height: 20mm; border: 1px dashed #333; display: grid; place-items: center; font-size: 3mm; color: #666; margin: 0 auto; }
+								.club { font-size: 8.2mm; font-weight: 700; letter-spacing: 0.2mm; line-height: 1.1; }
+								.meta-line { margin-top: 1.2mm; font-size: 4.1mm; line-height: 1.3; }
+								.theme-line { margin-top: 1.8mm; font-size: 4.8mm; font-weight: 600; }
+								.layout { display: grid; grid-template-columns: 136mm 54mm; gap: 0; }
+								table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+								.main-table { border: 1px solid #333; }
+								.main-table th, .main-table td { border: 1px solid #333; padding: 1.4mm 1.1mm; font-size: 3.8mm; text-align: center; vertical-align: middle; }
+								.main-table th { background: #ececec; font-weight: 700; }
+								.main-table col.time { width: 20mm; }
+								.main-table col.session { width: auto; }
+								.main-table col.duration { width: 15mm; }
+								.main-table col.name { width: 22mm; }
+								.side { border-top: 1px solid #333; border-right: 1px solid #333; border-bottom: 1px solid #333; }
+								.side-block { border-bottom: 1px solid #333; }
+								.side-title { font-size: 3.6mm; font-weight: 700; background: #ececec; padding: 1.5mm 2mm; border-bottom: 1px solid #333; }
+								.side-content { padding: 1.7mm 2mm; font-size: 3.4mm; line-height: 1.35; }
+								.manager-table td { border: 1px solid #333; padding: 1.4mm 1.7mm; font-size: 3.4mm; }
+								.manager-table td:first-child { background: #ececec; width: 58%; font-weight: 700; }
+								.qr-wrap { display: grid; place-items: center; gap: 1.2mm; padding: 1.6mm 0 0.8mm; }
+								.qr-placeholder { width: 24mm; height: 24mm; border: 1px dashed #333; display: grid; place-items: center; font-size: 3mm; color: #666; }
+								.side-note { margin-top: 1.2mm; font-size: 3.2mm; line-height: 1.3; }
+								.bottom-row { display: grid; grid-template-columns: 136mm 54mm; gap: 0; }
+								.timer { margin-top: 2mm; border: 1px solid #333; width: 136mm; }
+								.timer th, .timer td { border: 1px solid #333; font-size: 3.2mm; padding: 1.2mm 1mm; text-align: center; }
+								.timer th { background: #ececec; }
+								.vote-box { margin-top: 2mm; border: 1px solid #333; border-left: 0; display: grid; grid-template-columns: 13mm 1fr; min-height: 35mm; }
+								.vote-label { border-right: 1px solid #333; background: #ececec; display: grid; place-items: center; font-size: 3.8mm; font-weight: 700; line-height: 1.3; text-align: center; }
+								.vote-content { display: grid; place-items: center; padding: 2mm; }
+								.vote-qr-placeholder { width: 26mm; height: 26mm; border: 1px dashed #333; display: grid; place-items: center; font-size: 3mm; color: #666; }
+								.footer-note { border: 1px solid #333; border-top: 0; padding: 1.6mm 2mm; font-size: 3.2mm; text-align: center; width: 136mm; }
+							</style>
+						</head>
+						<body>
+							<div class="sheet">
+								<div class="header">
+									<div class="logo-placeholder">LOGO</div>
+									<div class="header-main">
+										<div class="club">SHIP TOASTMASTER CLUB</div>
+										<div class="meta-line">Time: ${escapeHtml(data.date)} ${escapeHtml(data.time)}</div>
+										<div class="meta-line">Place: ${escapeHtml(data.location)}</div>
+										<div class="theme-line">SHIP ${escapeHtml(data.id || '')} Meeting Theme: ${escapeHtml(data.title || 'Meeting Agenda')}</div>
+									</div>
+									<div class="logo-placeholder">LOGO</div>
+								</div>
+								<div class="layout">
+									<table class="main-table">
+										<colgroup>
+											<col class="time" />
+											<col class="session" />
+											<col class="duration" />
+											<col class="name" />
+										</colgroup>
+										<thead>
+											<tr>
+												<th>Time</th>
+												<th>Session/Role</th>
+												<th>Duration</th>
+												<th>Name</th>
+											</tr>
+										</thead>
+										<tbody>${agendaRows}</tbody>
+									</table>
+									<div class="side">
+										<div class="side-block">
+											<table class="manager-table" style="width:100%; border-collapse:collapse;">
+												<tr><td>Meeting Manager</td><td>${escapeHtml(data.manager || '-')}</td></tr>
+												<tr><td>Meeting Type</td><td>${escapeHtml(data.type || '-')}</td></tr>
+												<tr><td>Word of Today</td><td>${escapeHtml(data.wordOfToday || '-')}</td></tr>
+											</table>
+										</div>
+										<div class="side-block">
+											<div class="side-title">Guide</div>
+											<div class="side-content">
+												<div class="qr-wrap">
+													<div class="qr-placeholder">QR</div>
+													<div>Join us at SHIP</div>
+												</div>
+												<div class="side-note">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</div>
+											</div>
+										</div>
+										<div class="side-block">
+											<div class="side-title">Guide for Guests</div>
+											<div class="side-content">
+												Lorem ipsum dolor sit amet, consectetur adipiscing elit.<br />
+												Lorem ipsum dolor sit amet, consectetur adipiscing elit.<br />
+												Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+											</div>
+										</div>
+										<div class="side-block">
+											<div class="side-title">Pathways</div>
+											<div class="side-content">
+												Lorem ipsum dolor sit amet, consectetur adipiscing elit. Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+											</div>
+										</div>
+										<div class="side-block">
+											<div class="side-title">4 Habits / 4 Taboos</div>
+											<div class="side-content">Lorem ipsum dolor sit amet, consectetur adipiscing elit.</div>
+										</div>
+									</div>
+								</div>
+								<div class="bottom-row">
+									<div>
+										<table class="timer">
+											<thead>
+												<tr>
+													<th></th>
+													<th>Short Speeches &le; 3 min</th>
+													<th>Long Speeches &lt; 10 min</th>
+													<th>Long Speeches &ge; 10 min</th>
+												</tr>
+											</thead>
+											<tbody>
+												<tr><th>Green</th><td>1 minute left</td><td>2 minutes left</td><td>5 minutes left</td></tr>
+												<tr><th>Yellow</th><td>30 seconds left</td><td>1 minute left</td><td>2 minutes left</td></tr>
+												<tr><th>Red</th><td colspan="3">Time is up</td></tr>
+											</tbody>
+										</table>
+										<div class="footer-note">Timer rings after red card. We learn by doing.</div>
+									</div>
+									<div class="vote-box">
+										<div class="vote-label">Vote<br />link</div>
+										<div class="vote-content">
+											<div class="vote-qr-placeholder">QR</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</body>
+					</html>
+				`;
+
+				const frame = document.createElement('iframe');
+				frame.style.position = 'fixed';
+				frame.style.right = '0';
+				frame.style.bottom = '0';
+				frame.style.width = '0';
+				frame.style.height = '0';
+				frame.style.border = '0';
+				frame.setAttribute('aria-hidden', 'true');
+				document.body.appendChild(frame);
+
+				const doc = frame.contentDocument || frame.contentWindow?.document;
+				if (!doc || !frame.contentWindow) {
+					frame.remove();
+					alert('Print failed. Please try again.');
+					return;
+				}
+
+				doc.open();
+				doc.write(html);
+				doc.close();
+				frame.contentWindow.focus();
+				frame.contentWindow.print();
+				setTimeout(() => frame.remove(), 1000);
 			}
 
 			function loadStandardTemplate() {
@@ -413,11 +703,11 @@ import { defaultMeetings } from '../data/meetings';
 			});
 
 			byId('new-meeting').addEventListener('click', newMeeting);
-			byId('add-award').addEventListener('click', () => byId('award-list').appendChild(makeAwardRow()));
 			byId('add-agenda').addEventListener('click', () => {
 				byId('agenda-list').appendChild(makeAgendaRow());
 				recomputeAgendaPlanTimes();
 			});
+			byId('print-agenda').addEventListener('click', printAgenda);
 			byId('load-template').addEventListener('click', loadStandardTemplate);
 			byId('agenda-start-time').addEventListener('input', recomputeAgendaPlanTimes);
 
@@ -590,6 +880,23 @@ import { defaultMeetings } from '../data/meetings';
 		display: grid;
 		gap: 0.62rem;
 	}
+	.console-page .editor-field {
+		display: grid;
+		grid-template-columns: 120px minmax(0, 1fr);
+		align-items: center;
+		gap: 0.6rem;
+		font-size: 0.9rem;
+	}
+	.console-page .editor-label {
+		color: var(--c-muted);
+		font-weight: 600;
+	}
+	.console-page .editor-field textarea {
+		min-height: 120px;
+	}
+	.console-page .editor-field.file-label input {
+		margin-top: 0;
+	}
 	.console-page .file-label input {
 		margin-top: 0.32rem;
 	}
@@ -645,6 +952,14 @@ import { defaultMeetings } from '../data/meetings';
 		grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
 		gap: 0.45rem;
 		margin-bottom: 0.45rem;
+	}
+	.console-page .award-row {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+	.console-page .award-row [name='awardTitle'] {
+		background: #f3f7ff;
+		color: #496a96;
+		font-weight: 600;
 	}
 	.console-page .agenda-row {
 		grid-template-columns: 64px 78px minmax(120px, 1fr) 140px 100px 40px 34px;
@@ -704,4 +1019,3 @@ import { defaultMeetings } from '../data/meetings';
 		}
 	}
 </style>
-

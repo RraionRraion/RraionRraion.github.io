@@ -16,6 +16,7 @@ export type MeetingItem = {
 	id: string;
 	type: string;
 	title: string;
+	wordOfToday?: string;
 	manager: string;
 	date: string;
 	time: string;

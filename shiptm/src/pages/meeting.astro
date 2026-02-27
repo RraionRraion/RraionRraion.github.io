@@ -1,4 +1,4 @@
----
+﻿---
 import BaseHead from '../components/BaseHead.astro';
 import Footer from '../components/Footer.astro';
 import Header from '../components/Header.astro';
@@ -164,8 +164,9 @@ import { defaultMeetings } from '../data/meetings';
 									<h2>${escapeHtml(meeting.title)}</h2>
 									<p class="manager">Managed by ${escapeHtml(meeting.manager)}</p>
 									<div class="meta">
-										<p><span class="meta-icon">◷</span>${escapeHtml(meeting.date)} | ${escapeHtml(meeting.time)}</p>
-										<p><span class="meta-icon">◉</span>${escapeHtml(meeting.location)}</p>
+										<p><span class="meta-icon">&bull;</span>${escapeHtml(meeting.date)} | ${escapeHtml(meeting.time)}</p>
+										<p><span class="meta-icon">&bull;</span>Word of Today: ${escapeHtml(meeting.wordOfToday || '-')}</p>
+										<p><span class="meta-icon">&bull;</span>${escapeHtml(meeting.location)}</p>
 									</div>
 									<p class="description">${escapeHtml(meeting.description)}</p>
 								</div>
