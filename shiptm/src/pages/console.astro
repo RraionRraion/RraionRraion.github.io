@@ -8,6 +8,9 @@ import { Image } from 'astro:assets';
 import VpmCode from '../assets/vpm.png';
 import ShipLogo from '../assets/shiplogo.jpg';
 import ToastmastersLogo from '../assets/toastmasters.png';
+
+const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL ?? '';
+const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY ?? '';
 ---
 
 <!doctype html>
@@ -146,15 +149,23 @@ import ToastmastersLogo from '../assets/toastmasters.png';
 		</main>
 		<Footer />
 
-		<script is:inline define:vars={{ defaultMeetings, vpmCode: VpmCode.src, shipLogo: ShipLogo.src, toastmastersLogo: ToastmastersLogo.src }}>
+		<script
+			is:inline
+			define:vars={{ defaultMeetings, vpmCode: VpmCode.src, shipLogo: ShipLogo.src, toastmastersLogo: ToastmastersLogo.src, supabaseUrl, supabaseAnonKey }}
+		>
 			const DEFAULT_MEETINGS = Array.isArray(defaultMeetings) ? defaultMeetings : [];
 			const STORAGE_KEY = 'ship_meetings_v1';
 			const AUTH_KEY = 'ship_console_auth';
+			const REMOTE_TABLE = 'ship_meeting_store';
+			const REMOTE_ROW_ID = 'main';
 			const ACCOUNT = 'ship';
 			const PASSWORD = 'ship';
 			const DEFAULT_TYPE = 'Regular';
 			const DEFAULT_TIME_RANGE = '19:30:00 - 21:30:00';
 			const DEFAULT_LOCATION = '深圳湾科技生态园10B号楼';
+			const REMOTE_URL = String(supabaseUrl || '').trim().replace(/\/+$/, '');
+			const REMOTE_ANON_KEY = String(supabaseAnonKey || '').trim();
+			const REMOTE_ENABLED = Boolean(REMOTE_URL && REMOTE_ANON_KEY);
 			const STANDARD_TEMPLATE = [
 				{ duration: '1', title: 'Welcome and meeting rules', speaker: 'Horatio' },
 				{ duration: '2', title: 'Opening', speaker: 'Gianna' },
@@ -196,19 +207,86 @@ import ToastmastersLogo from '../assets/toastmasters.png';
 			let meetings = [];
 			let editingIndex = null;
 
-				function loadMeetings() {
-					try {
-						const raw = localStorage.getItem(STORAGE_KEY);
-						meetings = raw ? JSON.parse(raw) : DEFAULT_MEETINGS;
-						if (!Array.isArray(meetings)) meetings = DEFAULT_MEETINGS;
-					} catch (err) {
-						meetings = DEFAULT_MEETINGS;
-					}
+			async function loadRemoteMeetings() {
+				if (!REMOTE_ENABLED) return null;
+				try {
+					const url = `${REMOTE_URL}/rest/v1/${REMOTE_TABLE}?id=eq.${encodeURIComponent(REMOTE_ROW_ID)}&select=meetings&limit=1`;
+					const res = await fetch(url, {
+						headers: {
+							apikey: REMOTE_ANON_KEY,
+							Authorization: `Bearer ${REMOTE_ANON_KEY}`,
+						},
+					});
+					if (!res.ok) throw new Error(`Remote load failed: ${res.status}`);
+					const rows = await res.json();
+					const next = rows?.[0]?.meetings;
+					return Array.isArray(next) ? next : null;
+				} catch (err) {
+					console.warn('[ship] remote load failed', err);
+					return null;
 				}
+			}
 
-			function saveMeetings() {
-				localStorage.setItem(STORAGE_KEY, JSON.stringify(meetings));
+			async function saveRemoteMeetings(nextMeetings) {
+				if (!REMOTE_ENABLED) return false;
+				const payload = {
+					id: REMOTE_ROW_ID,
+					meetings: nextMeetings,
+					updated_at: new Date().toISOString(),
+				};
+				const res = await fetch(`${REMOTE_URL}/rest/v1/${REMOTE_TABLE}`, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						apikey: REMOTE_ANON_KEY,
+						Authorization: `Bearer ${REMOTE_ANON_KEY}`,
+						Prefer: 'resolution=merge-duplicates,return=minimal',
+					},
+					body: JSON.stringify(payload),
+				});
+				if (!res.ok) throw new Error(`Remote save failed: ${res.status}`);
+				return true;
+			}
+
+			function loadMeetingsFromLocal() {
+				try {
+					const raw = localStorage.getItem(STORAGE_KEY);
+					meetings = raw ? JSON.parse(raw) : DEFAULT_MEETINGS;
+					if (!Array.isArray(meetings)) meetings = DEFAULT_MEETINGS;
+				} catch (err) {
+					meetings = DEFAULT_MEETINGS;
+				}
+			}
+
+			function saveMeetingsToLocal() {
+				try {
+					localStorage.setItem(STORAGE_KEY, JSON.stringify(meetings));
+					return true;
+				} catch (err) {
+					console.warn('[ship] local save failed', err);
+					alert('Local storage is full or unavailable. Data may not persist on this device.');
+					return false;
+				}
+			}
+
+			async function loadMeetings() {
+				loadMeetingsFromLocal();
+				const remoteMeetings = await loadRemoteMeetings();
+				if (Array.isArray(remoteMeetings)) {
+					meetings = remoteMeetings;
+					saveMeetingsToLocal();
+				}
+			}
+
+			async function saveMeetings() {
+				saveMeetingsToLocal();
 				renderMeetingList();
+				try {
+					await saveRemoteMeetings(meetings);
+				} catch (err) {
+					console.warn('[ship] remote save failed', err);
+					alert('Saved locally, but remote sync failed.');
+				}
 			}
 
 			function isAuth() {
@@ -795,14 +873,14 @@ Pathways 是头马国际的教育体系的重要组成部分，共 6 条学习�
 				recomputeAgendaPlanTimes();
 			}
 
-			byId('login-form').addEventListener('submit', (evt) => {
+			byId('login-form').addEventListener('submit', async (evt) => {
 				evt.preventDefault();
 				const account = byId('account').value.trim();
 				const password = byId('password').value.trim();
 				if (account === ACCOUNT && password === PASSWORD) {
 					setAuth(true);
 					setView();
-					loadMeetings();
+					await loadMeetings();
 					renderMeetingList();
 					if (meetings.length) loadToForm(0);
 				} else {
@@ -824,7 +902,7 @@ Pathways 是头马国际的教育体系的重要组成部分，共 6 条学习�
 			byId('load-template').addEventListener('click', loadStandardTemplate);
 			byId('agenda-start-time').addEventListener('input', recomputeAgendaPlanTimes);
 
-			byId('meeting-form').addEventListener('submit', (evt) => {
+			byId('meeting-form').addEventListener('submit', async (evt) => {
 				evt.preventDefault();
 				const next = collectForm();
 				if (editingIndex === null) {
@@ -833,26 +911,31 @@ Pathways 是头马国际的教育体系的重要组成部分，共 6 条学习�
 				} else {
 					meetings[editingIndex] = next;
 				}
-				saveMeetings();
+				await saveMeetings();
 				renderMeetingList();
 				alert('Meeting saved');
 			});
 
-			byId('delete-meeting').addEventListener('click', () => {
+			byId('delete-meeting').addEventListener('click', async () => {
 				if (editingIndex === null) return;
 				meetings.splice(editingIndex, 1);
-				saveMeetings();
+				await saveMeetings();
 				if (meetings.length) loadToForm(0);
 				else newMeeting();
 			});
 
 			bindFileUpload();
-			loadMeetings();
+			loadMeetingsFromLocal();
 			setView();
 			if (isAuth()) {
 				renderMeetingList();
 				if (meetings.length) loadToForm(0);
 				else newMeeting();
+				loadMeetings().then(() => {
+					renderMeetingList();
+					if (meetings.length) loadToForm(0);
+					else newMeeting();
+				});
 			}
 		</script>
 	</body>

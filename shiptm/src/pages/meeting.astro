@@ -4,6 +4,9 @@ import Footer from '../components/Footer.astro';
 import Header from '../components/Header.astro';
 import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 import { defaultMeetings } from '../data/meetings';
+
+const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL ?? '';
+const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY ?? '';
 ---
 
 <!doctype html>
@@ -23,9 +26,14 @@ import { defaultMeetings } from '../data/meetings';
 		</main>
 		<Footer />
 
-		<script is:inline define:vars={{ defaultMeetings }}>
+		<script is:inline define:vars={{ defaultMeetings, supabaseUrl, supabaseAnonKey }}>
 			const DEFAULT_MEETINGS = Array.isArray(defaultMeetings) ? defaultMeetings : [];
 			const STORAGE_KEY = 'ship_meetings_v1';
+			const REMOTE_TABLE = 'ship_meeting_store';
+			const REMOTE_ROW_ID = 'main';
+			const REMOTE_URL = String(supabaseUrl || '').trim().replace(/\/+$/, '');
+			const REMOTE_ANON_KEY = String(supabaseAnonKey || '').trim();
+			const REMOTE_ENABLED = Boolean(REMOTE_URL && REMOTE_ANON_KEY);
 
 			const escapeHtml = (value) =>
 				String(value ?? '')
@@ -35,7 +43,7 @@ import { defaultMeetings } from '../data/meetings';
 					.replaceAll('"', '&quot;')
 					.replaceAll("'", '&#39;');
 
-			function getMeetings() {
+			function getMeetingsFromLocal() {
 				try {
 					const raw = localStorage.getItem(STORAGE_KEY);
 					if (!raw) return DEFAULT_MEETINGS;
@@ -43,6 +51,30 @@ import { defaultMeetings } from '../data/meetings';
 					return Array.isArray(parsed) ? parsed : DEFAULT_MEETINGS;
 				} catch {
 					return DEFAULT_MEETINGS;
+				}
+			}
+
+			async function getMeetingsFromRemote() {
+				if (!REMOTE_ENABLED) return null;
+				try {
+					const url = `${REMOTE_URL}/rest/v1/${REMOTE_TABLE}?id=eq.${encodeURIComponent(REMOTE_ROW_ID)}&select=meetings&limit=1`;
+					const res = await fetch(url, {
+						headers: {
+							apikey: REMOTE_ANON_KEY,
+							Authorization: `Bearer ${REMOTE_ANON_KEY}`,
+						},
+					});
+					if (!res.ok) throw new Error(`Remote load failed: ${res.status}`);
+					const rows = await res.json();
+					const next = rows?.[0]?.meetings;
+					if (!Array.isArray(next)) return null;
+					try {
+						localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+					} catch {}
+					return next;
+				} catch (err) {
+					console.warn('[ship] remote load failed', err);
+					return null;
 				}
 			}
 
@@ -190,10 +222,12 @@ import { defaultMeetings } from '../data/meetings';
 				`;
 			}
 
-			function render() {
+			async function render() {
 				const target = document.getElementById('meeting-list');
 				if (!target) return;
-				const meetings = getMeetings();
+				let meetings = getMeetingsFromLocal();
+				const remoteMeetings = await getMeetingsFromRemote();
+				if (Array.isArray(remoteMeetings)) meetings = remoteMeetings;
 				target.innerHTML = meetings.map(renderMeetingCard).join('');
 			}
 
