@@ -6,6 +6,9 @@ create table if not exists public.ship_meeting_store (
 
 alter table public.ship_meeting_store enable row level security;
 
+grant usage on schema public to anon;
+grant select, insert, update on table public.ship_meeting_store to anon;
+
 drop policy if exists "anon_select_meeting_store" on public.ship_meeting_store;
 create policy "anon_select_meeting_store"
 on public.ship_meeting_store
