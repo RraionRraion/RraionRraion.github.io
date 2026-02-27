@@ -4,6 +4,10 @@ import Footer from '../components/Footer.astro';
 import Header from '../components/Header.astro';
 import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 import { defaultMeetings } from '../data/meetings';
+import { Image } from 'astro:assets';
+import VpmCode from '../assets/vpm.png';
+import ShipLogo from '../assets/shiplogo.jpg';
+import ToastmastersLogo from '../assets/toastmasters.png';
 ---
 
 <!doctype html>
@@ -142,7 +146,7 @@ import { defaultMeetings } from '../data/meetings';
 		</main>
 		<Footer />
 
-		<script is:inline define:vars={{ defaultMeetings }}>
+		<script is:inline define:vars={{ defaultMeetings, vpmCode: VpmCode.src, shipLogo: ShipLogo.src, toastmastersLogo: ToastmastersLogo.src }}>
 			const DEFAULT_MEETINGS = Array.isArray(defaultMeetings) ? defaultMeetings : [];
 			const STORAGE_KEY = 'ship_meetings_v1';
 			const AUTH_KEY = 'ship_console_auth';
@@ -488,9 +492,42 @@ import { defaultMeetings } from '../data/meetings';
 					.replaceAll("'", '&#39;');
 			}
 
-			function printAgenda() {
+			async function toDataUrl(url) {
+				const res = await fetch(url);
+				if (!res.ok) throw new Error(`Failed to load image: ${res.status}`);
+				const blob = await res.blob();
+				return await new Promise((resolve, reject) => {
+					const reader = new FileReader();
+					reader.onload = () => resolve(String(reader.result || ''));
+					reader.onerror = () => reject(new Error('Failed to read image'));
+					reader.readAsDataURL(blob);
+				});
+			}
+
+			async function printAgenda() {
 				recomputeAgendaPlanTimes();
 				const data = collectForm();
+				const qrImageUrl = new URL(vpmCode, window.location.origin).href;
+				const logo1Url = new URL(shipLogo, window.location.origin).href;
+				const logo2Url = new URL(toastmastersLogo, window.location.origin).href;
+				let qrPrintSrc = qrImageUrl;
+				let logo1PrintSrc = logo1Url;
+				let logo2PrintSrc = logo2Url;
+				try {
+					qrPrintSrc = await toDataUrl(qrImageUrl);
+				} catch (err) {
+					qrPrintSrc = qrImageUrl;
+				}
+				try {
+					logo1PrintSrc = await toDataUrl(logo1Url);
+				} catch (err) {
+					logo1PrintSrc = logo1Url;
+				}
+				try {
+					logo2PrintSrc = await toDataUrl(logo2Url);
+				} catch (err) {
+					logo2PrintSrc = logo2Url;
+				}
 
 				const agendaRows = (data.agenda || [])
 					.map(
@@ -519,49 +556,53 @@ import { defaultMeetings } from '../data/meetings';
 								.header { border: 1px solid #333; border-bottom: 0; padding: 3mm 4mm 2.5mm; text-align: center; display: grid; grid-template-columns: 24mm 1fr 24mm; align-items: center; column-gap: 2mm; }
 								.header-main { min-width: 0; }
 								.logo-placeholder { width: 20mm; height: 20mm; border: 1px dashed #333; display: grid; place-items: center; font-size: 3mm; color: #666; margin: 0 auto; }
-								.club { font-size: 8.2mm; font-weight: 700; letter-spacing: 0.2mm; line-height: 1.1; }
+								.logo-image { width: 20mm; height: 20mm; object-fit: contain; display: block; margin: 0 auto; }
+								.club { font-size: 7mm; font-weight: 700; letter-spacing: 0.2mm; line-height: 1.1; }
 								.meta-line { margin-top: 1.2mm; font-size: 4.1mm; line-height: 1.3; }
 								.theme-line { margin-top: 1.8mm; font-size: 4.8mm; font-weight: 600; }
-								.layout { display: grid; grid-template-columns: 136mm 54mm; gap: 0; }
+								.layout { display: grid; grid-template-columns: 136mm 54mm; gap: 1.2mm; }
 								table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-								.main-table { border: 1px solid #333; }
-								.main-table th, .main-table td { border: 1px solid #333; padding: 1.4mm 1.1mm; font-size: 3.8mm; text-align: center; vertical-align: middle; }
+								.main-table { border: 1px solid #333; border-right: 0; }
+								.main-table th, .main-table td { border: 0.5px solid #333; padding: 1.1mm 1.1mm; font-size: 3.2mm; text-align: center; vertical-align: middle; }
 								.main-table th { background: #ececec; font-weight: 700; }
 								.main-table col.time { width: 20mm; }
 								.main-table col.session { width: auto; }
 								.main-table col.duration { width: 15mm; }
 								.main-table col.name { width: 22mm; }
-								.side { border-top: 1px solid #333; border-right: 1px solid #333; border-bottom: 1px solid #333; }
+								.side { border-top: 1px solid #333; border-right: 1px solid #333; border-bottom: 1px solid #333; border-left: 0; }
 								.side-block { border-bottom: 1px solid #333; }
-								.side-title { font-size: 3.6mm; font-weight: 700; background: #ececec; padding: 1.5mm 2mm; border-bottom: 1px solid #333; }
-								.side-content { padding: 1.7mm 2mm; font-size: 3.4mm; line-height: 1.35; }
-								.manager-table td { border: 1px solid #333; padding: 1.4mm 1.7mm; font-size: 3.4mm; }
+								.side-block:last-child { border-bottom: 0; }
+								.side-title { font-size: 2.5mm; font-weight: 700; background: #ececec; padding: 1mm 1mm; border-bottom: 1px solid #333; }
+								.side-content { padding: 1.7mm 2mm; font-size: 2.1mm; line-height: 1.25; }
+								.manager-table td { border: 1px solid #333; padding: 1.2mm 1.2mm; font-size: 2.5mm; }
 								.manager-table td:first-child { background: #ececec; width: 58%; font-weight: 700; }
 								.qr-wrap { display: grid; place-items: center; gap: 1.2mm; padding: 1.6mm 0 0.8mm; }
 								.qr-placeholder { width: 24mm; height: 24mm; border: 1px dashed #333; display: grid; place-items: center; font-size: 3mm; color: #666; }
-								.side-note { margin-top: 1.2mm; font-size: 3.2mm; line-height: 1.3; }
-								.bottom-row { display: grid; grid-template-columns: 136mm 54mm; gap: 0; }
+								.qr-image { width: 24mm; height: 24mm; object-fit: contain; display: block; }
+								.side-note { margin-top: 1.2mm; font-size: 2mm; line-height: 1; }
+								.bottom-row { display: grid; grid-template-columns: 136mm 54mm; gap: 1.2mm; }
 								.timer { margin-top: 2mm; border: 1px solid #333; width: 136mm; }
-								.timer th, .timer td { border: 1px solid #333; font-size: 3.2mm; padding: 1.2mm 1mm; text-align: center; }
+								.timer th, .timer td { border: 1px solid #333; font-size: 2.8mm; padding: 1mm 1mm; text-align: center; }
 								.timer th { background: #ececec; }
 								.vote-box { margin-top: 2mm; border: 1px solid #333; border-left: 0; display: grid; grid-template-columns: 13mm 1fr; min-height: 35mm; }
 								.vote-label { border-right: 1px solid #333; background: #ececec; display: grid; place-items: center; font-size: 3.8mm; font-weight: 700; line-height: 1.3; text-align: center; }
 								.vote-content { display: grid; place-items: center; padding: 2mm; }
 								.vote-qr-placeholder { width: 26mm; height: 26mm; border: 1px dashed #333; display: grid; place-items: center; font-size: 3mm; color: #666; }
+								.vote-qr-image { width: 26mm; height: 26mm; object-fit: contain; display: block; }
 								.footer-note { border: 1px solid #333; border-top: 0; padding: 1.6mm 2mm; font-size: 3.2mm; text-align: center; width: 136mm; }
 							</style>
 						</head>
 						<body>
 							<div class="sheet">
 								<div class="header">
-									<div class="logo-placeholder">LOGO</div>
+									<img class="logo-image" src="${logo1PrintSrc}" alt="Ship Logo" />
 									<div class="header-main">
 										<div class="club">SHIP TOASTMASTER CLUB</div>
 										<div class="meta-line">Time: ${escapeHtml(data.date)} ${escapeHtml(data.time)}</div>
 										<div class="meta-line">Place: ${escapeHtml(data.location)}</div>
 										<div class="theme-line">SHIP ${escapeHtml(data.id || '')} Meeting Theme: ${escapeHtml(data.title || 'Meeting Agenda')}</div>
 									</div>
-									<div class="logo-placeholder">LOGO</div>
+									<img class="logo-image" src="${logo2PrintSrc}" alt="Toastmasters Logo" />
 								</div>
 								<div class="layout">
 									<table class="main-table">
@@ -590,33 +631,86 @@ import { defaultMeetings } from '../data/meetings';
 											</table>
 										</div>
 										<div class="side-block">
-											<div class="side-title">Guide</div>
+											<div class="side-title">Join us 如何加入SHIP？</div>
 											<div class="side-content">
 												<div class="qr-wrap">
-													<div class="qr-placeholder">QR</div>
-													<div>Join us at SHIP</div>
+													<img class="qr-image" src="${qrPrintSrc}" alt="VPM Code" />
 												</div>
-												<div class="side-note">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</div>
+<div class="side-note">
+<strong>Membership requirements:</strong><br>
+3: Attend 3 meetings;<br>
+2: speak on stage twice (role-based);<br>
+1: submit 1 application.<br>
+<strong>Membership fee:</strong><br>
+350 Yuan: registration fee<br>
+700 Yuan: semi-annual fee<br>
+1300 Yuan: annual fee
+</div>
 											</div>
 										</div>
 										<div class="side-block">
-											<div class="side-title">Guide for Guests</div>
+											<div class="side-title">Guide for Guests 嘉宾参会指南</div>
 											<div class="side-content">
-												Lorem ipsum dolor sit amet, consectetur adipiscing elit.<br />
-												Lorem ipsum dolor sit amet, consectetur adipiscing elit.<br />
-												Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+
+											 <strong>Guest Introduction (30s)</strong><br>
+  自我介绍，为什么参加 SHIP，兴趣爱好等<br>
+  <strong>Table Topic Speech (2 mins)</strong><br>
+  限 5–6 个参与名额，先抢先得<br>
+  会员和观众都可以参与<br>
+  想锻炼的勇敢冲！（P.S. 特殊例会无此环节，最终环节以 agenda 为准）<br>
+
+  <strong>Moment of Truth (30–60s)</strong><br>
+  分享你参会的感受，印象深刻的人或事，或表达感谢<br>
+
+  <strong>More Opportunities</strong><br>
+  可申请角色：Timer时间官，Grammarian语法官，Ah-counter哼哈官<br>
+
+  期待遇见同频的你！<br>
+
+  <strong>Let’s be Smart Happy Intellectual Passionate!</strong>
+
+
+
 											</div>
 										</div>
 										<div class="side-block">
-											<div class="side-title">Pathways</div>
+											<div class="side-title">Pathways 教育体系</div>
 											<div class="side-content">
-												Lorem ipsum dolor sit amet, consectetur adipiscing elit. Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+Pathways 是头马国际的教育体系的重要组成部分，共 6 条学习路径，针对性提高 5 项基本能力。<br><br>
+
+<strong>6 条演讲路径 能力</strong><br> 
+动态领袖 DL  Dynamic Leadership 1235 <br>
+激励策略 MS  Motivational Strategies 1235<br>
+幽默演讲 EH  Engaging Humor 1245<br>
+说服影响 PI  Persuasive Influence 1325<br>
+精通演讲 PM  Presentation Mastery 15<br>
+愿景沟通 VC  Visionary Communication 1325<br><br>
+
+<strong>能力速查 →</strong><br>
+1：公众表达 PS   2：人际沟通 IC<br>
+3：战略领袖 SL   4：管理 M<br>
+5：自信 C<br>
+
+你无法通过听课而提升自信，但你走完每条路径时会变得更自信。 We learn by doing.
+
+
 											</div>
 										</div>
 										<div class="side-block">
-											<div class="side-title">4 Habits / 4 Taboos</div>
-											<div class="side-content">Lorem ipsum dolor sit amet, consectetur adipiscing elit.</div>
+											<div class="side-title">4 Habits </div>
+											<div class="side-content">1. 手机静音 Mute mobile phone.<br>
+2. 上台握手 Shake hands with TME.<br>
+3. 勿随意走动 No walking in/out.<br>
+4. 保持安静 Keep quiet when someone is speaking.
+</div>
 										</div>
+
+											<div class="side-block">
+											<div class="side-title">4 Taboos</div>
+											<div class="side-content">Politics，Religion，Sex，Bad taste</div>
+										</div>
+
+
 									</div>
 								</div>
 								<div class="bottom-row">
@@ -634,14 +728,20 @@ import { defaultMeetings } from '../data/meetings';
 												<tr><th>Green</th><td>1 minute left</td><td>2 minutes left</td><td>5 minutes left</td></tr>
 												<tr><th>Yellow</th><td>30 seconds left</td><td>1 minute left</td><td>2 minutes left</td></tr>
 												<tr><th>Red</th><td colspan="3">Time is up</td></tr>
+												<tr>
+												<th>Ring</th>
+												<td>after 15",Timer will ring to stop the speaker</td>
+												<td colspan="2">after 30",Timer will ring to stop the speaker</td>
+											
+												</tr>
 											</tbody>
 										</table>
-										<div class="footer-note">Timer rings after red card. We learn by doing.</div>
+										
 									</div>
 									<div class="vote-box">
 										<div class="vote-label">Vote<br />link</div>
 										<div class="vote-content">
-											<div class="vote-qr-placeholder">QR</div>
+											<img class="vote-qr-image" src="${qrPrintSrc}" alt="Vote QR Code" />
 										</div>
 									</div>
 								</div>
@@ -670,9 +770,22 @@ import { defaultMeetings } from '../data/meetings';
 				doc.open();
 				doc.write(html);
 				doc.close();
+				const images = [...doc.images];
+				await Promise.all(
+					images.map(
+						(img) =>
+							new Promise((resolve) => {
+								if (img.complete) resolve(true);
+								else {
+									img.onload = () => resolve(true);
+									img.onerror = () => resolve(true);
+								}
+							})
+					)
+				);
 				frame.contentWindow.focus();
 				frame.contentWindow.print();
-				setTimeout(() => frame.remove(), 1000);
+				setTimeout(() => frame.remove(), 1200);
 			}
 
 			function loadStandardTemplate() {
