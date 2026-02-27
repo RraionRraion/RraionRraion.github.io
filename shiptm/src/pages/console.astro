@@ -71,7 +71,7 @@ import { defaultMeetings } from '../data/meetings';
 										<div class="agenda-tools">
 											<label class="start-time-label">
 												Start
-												<input id="agenda-start-time" type="time" value="19:15" />
+												<input id="agenda-start-time" type="time" value="19:00" />
 											</label>
 											<button id="load-template" type="button">Load Standard Template</button>
 											<button id="add-agenda" type="button">+ Agenda Item</button>
@@ -80,9 +80,9 @@ import { defaultMeetings } from '../data/meetings';
 									<div class="agenda-head">
 										<span>Plan time</span>
 										<span>Duration (min)</span>
-										<span>Actual time</span>
 										<span>Agenda title</span>
 										<span>Role taker</span>
+										<span>Actual duration</span>
 										<span>Signal</span>
 										<span></span>
 									</div>
@@ -108,27 +108,30 @@ import { defaultMeetings } from '../data/meetings';
 			const ACCOUNT = 'ship';
 			const PASSWORD = 'ship';
 			const STANDARD_TEMPLATE = [
-				{ duration: '15', title: 'Members and Guests Registration, Warm up', speaker: 'All' },
-				{ duration: '3', title: 'Meeting Rules Introduction (SAA)', speaker: 'Jenny' },
-				{ duration: '2', title: 'Opening Remarks (President)', speaker: 'Amy Fang' },
-				{ duration: '2', title: 'TOM (Toastmaster of Meeting) Introduction', speaker: 'Amy Fang' },
-				{ duration: '3', title: 'Timer', speaker: 'Leo Liu' },
-				{ duration: '3', title: 'Grammarian', speaker: 'Julia Hu' },
-				{ duration: '8', title: 'Guests Self Introduction (30s per guest)', speaker: 'Selina' },
-				{ duration: '4', title: 'TTM (Table Topic Master) Opening', speaker: 'Helen Chen' },
-				{ duration: '16', title: 'WOT (Word of Today): Expectancy', speaker: 'All' },
-				{ duration: '7', title: 'Prepared Speech 1', speaker: 'Lucas' },
-				{ duration: '7', title: 'Prepared Speech 2', speaker: 'Max Long' },
-				{ duration: '12', title: 'Tea Break & Group Photos', speaker: 'All' },
-				{ duration: '3', title: 'Prepared Speech 1 Evaluation', speaker: 'Catherine Yang' },
-				{ duration: '3', title: 'Prepared Speech 2 Evaluation', speaker: 'Jenny' },
-				{ duration: '2', title: "Timer's Report", speaker: 'Leo Liu' },
-				{ duration: '3', title: "Grammarian's Report", speaker: 'Julia Hu' },
-				{ duration: '8', title: 'General Evaluation', speaker: 'Leta Li' },
-				{ duration: '2', title: 'Voting Section (TOM)', speaker: 'Amy Fang' },
-				{ duration: '7', title: 'Moment of Truth', speaker: 'Leo Liu' },
-				{ duration: '3', title: 'Awards (President)', speaker: 'Amy Fang' },
-				{ duration: '2', title: 'Closing Remarks (President)', speaker: 'Amy Fang' },
+				{ duration: '1', title: 'Welcome and meeting rules', speaker: 'Horatio' },
+				{ duration: '2', title: 'Opening', speaker: 'Gianna' },
+				{ duration: '1', title: 'Toastmaster of the Evening', speaker: 'Nico' },
+				{ duration: '1', title: 'Timer Introduction', speaker: 'Bubbles' },
+				{ duration: '1', title: 'Grammarian Introduction', speaker: 'Leta' },
+				{ duration: '1', title: 'Hark master Introduction', speaker: 'Dustin' },
+				{ duration: '7', title: 'IP 3-1 the translator', speaker: 'Nico' },
+				{ duration: '7', title: 'PM 4-1 My "Unofficial" Story', speaker: 'Sophie' },
+				{ duration: '3', title: 'Speech by Mark', speaker: 'Mark' },
+				{ duration: '5', title: 'Guest Introduction', speaker: 'Rraion' },
+				{ duration: '3', title: 'Camera Flow Program', speaker: 'Angela' },
+				{ duration: '10', title: 'Break', speaker: 'All' },
+				{ duration: '25', title: 'Table Topic: Sense of Ritual or Formalism', speaker: 'Gianna' },
+				{ duration: '3', title: "Evaluation to Nico", speaker: 'Bella' },
+				{ duration: '3', title: "Evaluation to Sophie", speaker: 'Portia' },
+				{ duration: '3', title: 'Evaluation to Mark', speaker: 'Charmni' },
+				{ duration: '7', title: 'Table Topic Evaluation', speaker: 'Jurgen' },
+				{ duration: '2', title: 'Grammarian Report', speaker: 'Leta' },
+				{ duration: '3', title: 'Hark master Report', speaker: 'Dustin' },
+				{ duration: '2', title: 'Timer Report', speaker: 'Bubbles' },
+				{ duration: '1', title: 'Vote for the best', speaker: 'All' },
+				{ duration: '8', title: 'Moment of truth', speaker: 'Horatio' },
+				{ duration: '2', title: 'Award ceremony', speaker: 'Angela' },
+				{ duration: '1', title: 'Closing', speaker: 'Gianna' },
 			];
 
 			const qs = (s) => document.querySelector(s);
@@ -230,7 +233,8 @@ import { defaultMeetings } from '../data/meetings';
 			function recomputeAgendaPlanTimes() {
 				const rows = [...byId('agenda-list').querySelectorAll('.agenda-row')];
 				let nextPlan = timeToMinutes(byId('agenda-start-time').value);
-				if (!Number.isFinite(nextPlan)) nextPlan = timeToMinutes('19:15');
+				if (!Number.isFinite(nextPlan)) nextPlan = timeToMinutes('19:00');
+				nextPlan += 30;
 
 				rows.forEach((row, idx) => {
 					const planInput = row.querySelector('[name="planTimeDisplay"]');
@@ -242,16 +246,12 @@ import { defaultMeetings } from '../data/meetings';
 						planInput.value = minutesToTime(nextPlan);
 					} else {
 						const prevRow = rows[idx - 1];
-						const prevActual = prevRow.querySelector('[name="actualTime"]').value;
 						const prevDuration = prevRow.querySelector('[name="agendaDuration"]').value;
 						const prevPlan = prevRow.querySelector('[name="planTimeDisplay"]').value;
-						const prevRange = parseActualRange(prevActual);
 						const prevDur = parseMinutes(prevDuration);
 						const prevPlanMin = timeToMinutes(prevPlan);
-						if (prevRange) {
-							nextPlan = prevRange.end + 1;
-						} else if (Number.isFinite(prevPlanMin) && Number.isFinite(prevDur)) {
-							nextPlan = prevPlanMin + prevDur + 1;
+						if (Number.isFinite(prevPlanMin)) {
+							nextPlan = prevPlanMin + (Number.isFinite(prevDur) ? prevDur : 0) + 1;
 						}
 						planInput.value = minutesToTime(nextPlan);
 					}
@@ -274,9 +274,9 @@ import { defaultMeetings } from '../data/meetings';
 				row.innerHTML = `
 					<input name="planTimeDisplay" placeholder="Auto" readonly />
 					<input name="agendaDuration" placeholder="2" value="${data.duration || data.planDuration || ''}" />
-					<input name="actualTime" placeholder="Actual time" value="${data.actualTime || ''}" />
 					<input name="agendaTitle" placeholder="Agenda title" value="${data.title || ''}" />
 					<input name="agendaSpeaker" placeholder="Speaker" value="${data.speaker || ''}" />
+					<input name="actualTime" placeholder="Actual duration" value="${data.actualTime || ''}" />
 					<span class="status-pill status-neutral" title="Status preview"></span>
 					<button type="button" class="remove">x</button>
 				`;
@@ -335,7 +335,7 @@ import { defaultMeetings } from '../data/meetings';
 				['id', 'type', 'title', 'manager', 'date', 'time', 'location', 'description', 'image'].forEach((k) => {
 					form.elements[k].value = item[k] || '';
 				});
-				byId('agenda-start-time').value = item.agendaStartTime || '19:15';
+				byId('agenda-start-time').value = item.agendaStartTime || '19:00';
 				clearRows();
 				(item.awards || []).forEach((a) => byId('award-list').appendChild(makeAwardRow(a)));
 				(item.agenda || []).forEach((a) => byId('agenda-list').appendChild(makeAgendaRow(a)));
@@ -347,7 +347,7 @@ import { defaultMeetings } from '../data/meetings';
 				editingIndex = null;
 				const form = byId('meeting-form');
 				form.reset();
-				byId('agenda-start-time').value = '19:15';
+				byId('agenda-start-time').value = '19:00';
 				clearRows();
 				byId('award-list').appendChild(makeAwardRow());
 				byId('agenda-list').appendChild(makeAgendaRow());
@@ -379,14 +379,14 @@ import { defaultMeetings } from '../data/meetings';
 					location: form.elements.location.value.trim(),
 					description: form.elements.description.value.trim(),
 					image: form.elements.image.value.trim(),
-					agendaStartTime: byId('agenda-start-time').value || '19:15',
+					agendaStartTime: byId('agenda-start-time').value || '19:00',
 					awards: awards.filter((a) => a.title || a.winner),
 					agenda: agenda.filter((a) => a.title),
 				};
 			}
 
 			function loadStandardTemplate() {
-				byId('agenda-start-time').value = '19:15';
+				byId('agenda-start-time').value = '19:00';
 				byId('agenda-list').innerHTML = '';
 				STANDARD_TEMPLATE.forEach((item) => byId('agenda-list').appendChild(makeAgendaRow(item)));
 				recomputeAgendaPlanTimes();
@@ -629,7 +629,7 @@ import { defaultMeetings } from '../data/meetings';
 	}
 	.console-page .agenda-head {
 		display: grid;
-		grid-template-columns: 64px 78px 100px minmax(150px, 1fr) 96px 40px 34px;
+		grid-template-columns: 64px 78px minmax(120px, 1fr) 140px 100px 40px 34px;
 		gap: 0.45rem;
 		margin-bottom: 0.5rem;
 		font-size: 0.74rem;
@@ -647,7 +647,7 @@ import { defaultMeetings } from '../data/meetings';
 		margin-bottom: 0.45rem;
 	}
 	.console-page .agenda-row {
-		grid-template-columns: 64px 78px 100px minmax(150px, 1fr) 96px 40px 34px;
+		grid-template-columns: 64px 78px minmax(120px, 1fr) 140px 100px 40px 34px;
 		align-items: center;
 		min-width: 560px;
 	}
@@ -655,6 +655,14 @@ import { defaultMeetings } from '../data/meetings';
 		background: #f3f7ff;
 		color: #496a96;
 		font-weight: 600;
+	}
+	.console-page .agenda-head span:nth-child(5) {
+		color: #b37a00;
+	}
+	.console-page .agenda-row [name='actualTime'] {
+		background: #fff4cc;
+		border-color: rgba(179, 122, 0, 0.35);
+		color: #7a5400;
 	}
 	.console-page .status-pill {
 		display: inline-flex;
