@@ -57,8 +57,10 @@ const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY ?? '';
 			async function getMeetingsFromRemote() {
 				if (!REMOTE_ENABLED) return null;
 				try {
-					const url = `${REMOTE_URL}/rest/v1/${REMOTE_TABLE}?id=eq.${encodeURIComponent(REMOTE_ROW_ID)}&select=meetings&limit=1`;
+					const cacheBuster = `_ts=${Date.now()}`;
+					const url = `${REMOTE_URL}/rest/v1/${REMOTE_TABLE}?id=eq.${encodeURIComponent(REMOTE_ROW_ID)}&select=meetings&limit=1&${cacheBuster}`;
 					const res = await fetch(url, {
+						cache: 'no-store',
 						headers: {
 							apikey: REMOTE_ANON_KEY,
 							Authorization: `Bearer ${REMOTE_ANON_KEY}`,
@@ -234,6 +236,9 @@ const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY ?? '';
 			render();
 			window.addEventListener('storage', (evt) => {
 				if (evt.key === STORAGE_KEY) render();
+			});
+			document.addEventListener('visibilitychange', () => {
+				if (!document.hidden) render();
 			});
 		</script>
 	</body>
