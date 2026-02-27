@@ -8,4 +8,5 @@ import { defineConfig } from 'astro/config';
 export default defineConfig({
 	site: 'https://RraionRraion.github.io',
 	integrations: [mdx(), sitemap()],
+	base: 'shiptm',
 });
