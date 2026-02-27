@@ -1,15 +1,18 @@
 ---
 import { SITE_TITLE } from '../consts';
 import HeaderLink from './HeaderLink.astro';
+
+const base = import.meta.env.BASE_URL;
+const withBase = (path = '') => `${base}${path.replace(/^\/+/, '')}`;
 ---
 
 <header>
 	<nav>
-		<h2><a href="/">{SITE_TITLE}</a></h2>
+		<h2><a href={withBase()}>{SITE_TITLE}</a></h2>
 		<div class="internal-links">
-			<HeaderLink href="/">Introduction</HeaderLink>
-			<HeaderLink href="/meeting">Meetings</HeaderLink>
-			<HeaderLink href="/console">Console</HeaderLink>
+			<HeaderLink href={withBase()}>Introduction</HeaderLink>
+			<HeaderLink href={withBase('meeting')}>Meetings</HeaderLink>
+			<HeaderLink href={withBase('console')}>Console</HeaderLink>
 		</div>
 		<div class="social-links">
 			<a href="https://m.webtoo.ls/@astro" target="_blank">
